@@ -1,0 +1,182 @@
+#pragma kernel GenerateVertices
+
+#include "FastNoiseLite.hlsl"
+
+// ==========================================
+// 1. DATA STRUCTURES (Must match C# layout)
+// ==========================================
+struct GPUBiome
+{
+    float startThreshold;
+    float baseHeightOffset;
+    float amplitude;
+    float frequency;
+    int fractalType;
+    int octaves;
+    float lacunarity;
+    float gain;
+    float4 biomeColor;
+};
+
+struct GPUBiomePoint
+{
+    float3 position;
+    int biomeIndex;
+};
+
+struct GPUVertexData
+{
+    float3 position;
+    float padding; // MUST BE HERE TO MATCH C# 32-BYTE ALIGNMENT
+    float4 color;
+};
+
+// ==========================================
+// 2. I/O BUFFERS
+// ==========================================
+RWStructuredBuffer<GPUVertexData> _OutputVertices;
+StructuredBuffer<float3> _InputDirections;
+StructuredBuffer<GPUBiome> _Biomes;
+StructuredBuffer<GPUBiomePoint> _BiomePoints;
+
+// ==========================================
+// 3. GLOBAL UNIFORMS
+// ==========================================
+uint _VertexCount;
+uint _BiomeCount;
+uint _BiomePointCount;
+float _Radius;
+float _BiomeBlendDistance;
+
+int _EnableWarp;
+float _WarpAmplitude;
+float _WarpFrequency;
+int _MacroSeed;
+
+// ==========================================
+// 4. HELPER FUNCTIONS
+// ==========================================
+fnl_state GetBiomeNoiseState(GPUBiome biome, int seed)
+{
+    fnl_state state = fnlCreateState(seed);
+    state.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    state.fractal_type = biome.fractalType;
+    state.frequency = biome.frequency;
+    state.octaves = biome.octaves;
+    state.lacunarity = biome.lacunarity;
+    state.gain = biome.gain;
+    return state;
+}
+
+// ==========================================
+// 5. MAIN COMPUTE KERNEL
+// ==========================================
+[numthreads(64, 1, 1)]
+void GenerateVertices(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount)
+        return;
+
+    float3 unitVector = _InputDirections[id.x];
+    float3 samplePos = unitVector * _Radius;
+    float3 warpedDir = unitVector;
+    
+    // --- STEP 1: DOMAIN WARP ---
+    if (_EnableWarp == 1)
+    {
+        fnl_state warpState = fnlCreateState(_MacroSeed + 1);
+        warpState.domain_warp_type = FNL_DOMAIN_WARP_OPENSIMPLEX2;
+        warpState.domain_warp_amp = _WarpAmplitude;
+        warpState.frequency = _WarpFrequency;
+        
+        float wx = samplePos.x;
+        float wy = samplePos.y;
+        float wz = samplePos.z;
+        fnlDomainWarp3D(warpState, wx, wy, wz);
+        
+        warpedDir = normalize(float3(wx, wy, wz));
+    }
+
+    // --- STEP 2: SPHERICAL VORONOI ---
+    float d1Sqr = 3.402823466e+38F;
+    uint indexA = 0;
+
+    // Pass 1: Find the absolute closest point
+    for (uint i = 0; i < _BiomePointCount; i++)
+    {
+        float3 diff = warpedDir - _BiomePoints[i].position;
+        float sqrDist = dot(diff, diff);
+
+        if (sqrDist < d1Sqr)
+        {
+            d1Sqr = sqrDist;
+            indexA = _BiomePoints[i].biomeIndex;
+        }
+    }
+
+    float d2Sqr = 3.402823466e+38F;
+    uint indexB = indexA;
+
+    // Pass 2: Find the closest point belonging to a DIFFERENT biome
+    for (uint j = 0; j < _BiomePointCount; j++)
+    {
+        // Ignore points that belong to the same biome as indexA
+        if (_BiomePoints[j].biomeIndex == indexA)
+            continue;
+        
+        float3 diff = warpedDir - _BiomePoints[j].position;
+        float sqrDist = dot(diff, diff);
+
+        if (sqrDist < d2Sqr)
+        {
+            d2Sqr = sqrDist;
+            indexB = _BiomePoints[j].biomeIndex;
+        }
+    }
+
+    // --- STEP 3: BLEND WEIGHT CALCULATION ---
+    float blendWeight = 0.0;
+    
+    // Only blend if a border was actually found
+    if (indexA != indexB)
+    {
+        float edgeDiff = sqrt(d2Sqr) - sqrt(d1Sqr);
+        
+        if (edgeDiff < _BiomeBlendDistance)
+        {
+            float t = edgeDiff / _BiomeBlendDistance;
+            blendWeight = smoothstep(0.0, 1.0, 0.5 * (1.0 - t));
+        }
+    }
+
+    // --- STEP 4: TERRAIN EVALUATION ---
+    GPUBiome biomeA = _Biomes[indexA];
+    fnl_state stateA = GetBiomeNoiseState(biomeA, _MacroSeed);
+    float noiseA = fnlGetNoise3D(stateA, samplePos.x, samplePos.y, samplePos.z);
+    
+    if (biomeA.fractalType == FNL_FRACTAL_RIDGED)
+        noiseA = abs(noiseA);
+    float heightA = biomeA.baseHeightOffset + (noiseA * biomeA.amplitude);
+
+    float heightB = heightA;
+    GPUBiome biomeB = biomeA;
+
+    if (indexA != indexB)
+    {
+        biomeB = _Biomes[indexB];
+        fnl_state stateB = GetBiomeNoiseState(biomeB, _MacroSeed);
+        float noiseB = fnlGetNoise3D(stateB, samplePos.x, samplePos.y, samplePos.z);
+        
+        if (biomeB.fractalType == FNL_FRACTAL_RIDGED)
+            noiseB = abs(noiseB);
+        heightB = biomeB.baseHeightOffset + (noiseB * biomeB.amplitude);
+    }
+
+    // --- STEP 5: SYNTHESIS & OUTPUT ---
+    GPUVertexData output;
+    output.position = unitVector * (_Radius + lerp(heightA, heightB, blendWeight));
+    output.padding = 0.0; // Fill the dummy variable
+    output.color = lerp(biomeA.biomeColor, biomeB.biomeColor, blendWeight);
+
+    _OutputVertices[id.x] = output;
+}
