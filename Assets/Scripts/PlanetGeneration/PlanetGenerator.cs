@@ -1,14 +1,16 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 using System.Collections.Generic;
+using OrbitGame.OrbitMechanics;
 
 namespace PlanetGeneration
 {
     [ExecuteAlways]
     public class PlanetGenerator : MonoBehaviour
     {
-        [Header("References")]
+        [Header("Surface Settings")]
         [SerializeField] private PlanetSettings settings;
+
+        [Header("References")]
         [SerializeField] private Transform playerTransform;
 
         [Header("Compute Shader")]
@@ -21,7 +23,6 @@ namespace PlanetGeneration
         public ShapeGenerator ShapeGenerator => _shapeGenerator;
         public Transform PlayerTransform => playerTransform;
 
-        // GPU Data Properties
         public ComputeShader ComputeShader => computeShader;
         public GPUBiome[] GPUBiomes { get; private set; }
         public GPUBiomePoint[] GPUBiomePoints { get; private set; }
@@ -50,9 +51,8 @@ namespace PlanetGeneration
 
         private void Update()
         {
-            if (playerTransform == null || _rootFaces.Count == 0) return;
+            if (playerTransform == null || _rootFaces.Count == 0 || settings == null) return;
 
-            // Convert player to local space, then pass THAT to the faces.
             Vector3 localPlayerPos = transform.InverseTransformPoint(playerTransform.position);
 
             foreach (var face in _rootFaces)
@@ -66,7 +66,6 @@ namespace PlanetGeneration
 
         private void Startup()
         {
-            // Halt if the shader is not assigned in the inspector
             if (settings == null || computeShader == null) return;
 
             _shapeGenerator = new ShapeGenerator(settings);
@@ -78,7 +77,6 @@ namespace PlanetGeneration
 
         private void InitializeGPUData()
         {
-            // 1. Flatten Biome Settings
             int biomeCount = settings.biomes?.Length ?? 0;
             GPUBiomes = new GPUBiome[biomeCount];
             for (int i = 0; i < biomeCount; i++)
@@ -86,7 +84,6 @@ namespace PlanetGeneration
                 GPUBiomes[i] = new GPUBiome(settings.biomes[i]);
             }
 
-            // 2. Flatten Biome Points
             BiomePoint[] cpuPoints = _shapeGenerator.GetBiomePoints();
             GPUBiomePoints = new GPUBiomePoint[cpuPoints.Length];
             for (int i = 0; i < cpuPoints.Length; i++)
