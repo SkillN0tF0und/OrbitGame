@@ -32,7 +32,7 @@ namespace OrbitGame.OrbitMechanics
             tickInterval = TicksPerSecond > 0f ? 1f / TicksPerSecond : 0.02f;
 
             // FindObjectsByType is the updated standard for Unity 2023+
-            AllBodies = FindObjectsByType<CelestialBody>(FindObjectsSortMode.None);
+            AllBodies = FindObjectsByType<CelestialBody>();
             BuildHierarchy();
         }
 

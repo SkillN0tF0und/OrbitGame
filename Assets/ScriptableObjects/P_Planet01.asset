@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: P_Planet01
   m_EditorClassIdentifier: Assembly-CSharp::PlanetGeneration.PlanetSettings
   radius: 500
-  material: {fileID: 2100000, guid: 93278248676c060408b9e0c309210777, type: 2}
+  material: {fileID: 2100000, guid: 25eff10e31a797b46a97b981d60371c8, type: 2}
   chunkResolution: 16
+  backFaceCullThreshold: 0
   maxRecursionDepth: 5
   lodDistances:
   - 50
@@ -23,64 +24,23 @@ MonoBehaviour:
   - 300
   - 400
   - 500
-  disableLOD: 1
+  planetSeed: 1332
+  disableLOD: 0
   fixedLODLevel: 2
   collisionDistance: 100
   biomeNoiseFrequency: 0.002
-  biomeBlendDistance: 0.059
-  biomeNoisePoints: 1024
-  biomePointJitter: 0.6
+  biomeBlendDistance: 0.032
+  biomeNoisePoints: 512
+  biomePointJitter: 0.269
   enableWarp: 1
-  warpAmplitude: 10
-  warpFrequency: 0.01
-  biomes:
-  - biomeName: DeepOcean
-    startThreshold: -1
-    baseHeightOffset: -30
-    amplitude: 6
-    frequency: 0.006
-    fractalType: 1
-    octaves: 5
-    lacunarity: 1.3
-    gain: 3
-    biomeColor: {r: 0.009731808, g: 0.083796225, b: 0.38005382, a: 0}
-  - biomeName: Ocean
-    startThreshold: -0.8
-    baseHeightOffset: -15
-    amplitude: 6
-    frequency: 0.006
-    fractalType: 1
-    octaves: 5
-    lacunarity: 1.3
-    gain: 3
-    biomeColor: {r: 0, g: 0.19968677, b: 1, a: 0}
-  - biomeName: Plains
-    startThreshold: -0.154
-    baseHeightOffset: 2
-    amplitude: 8
-    frequency: 0.009
-    fractalType: 1
-    octaves: 4
-    lacunarity: 1.6
-    gain: 1.3
-    biomeColor: {r: 0.10341948, g: 1, b: 0, a: 0}
-  - biomeName: Mountains
+  warpAmplitude: 3
+  warpFrequency: 0.04
+  colorBlendSharpness: 11.35
+  globalSteepnessThreshold: 0.079
+  biomePlacements:
+  - biome: {fileID: 11400000, guid: 1984f1aa2bb68af4bbf34004cd48be7f, type: 2}
+    startThreshold: -0.124
+  - biome: {fileID: 11400000, guid: d0103a31c38bfe24fb381b24fbbe5ae6, type: 2}
+    startThreshold: -0.438
+  - biome: {fileID: 11400000, guid: c2587e47cec3ba941b854299730350d0, type: 2}
     startThreshold: 0.5
-    baseHeightOffset: 10
-    amplitude: 30
-    frequency: 0.007
-    fractalType: 2
-    octaves: 5
-    lacunarity: 1.8
-    gain: 0.8
-    biomeColor: {r: 0.57412386, g: 0.40157717, b: 0.4322914, a: 0}
-  - biomeName: HighMountains
-    startThreshold: 0.78
-    baseHeightOffset: 20
-    amplitude: 40
-    frequency: 0.009
-    fractalType: 2
-    octaves: 5
-    lacunarity: 1.8
-    gain: 0.8
-    biomeColor: {r: 0.94609153, g: 0.5430627, b: 0.53934866, a: 0}

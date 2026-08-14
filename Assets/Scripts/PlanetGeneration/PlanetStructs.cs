@@ -1,117 +1,114 @@
-using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace PlanetGeneration
 {
-    public struct ChunkGeometry//three corners of triangle chunk
+    public struct ChunkGeometry
     {
-        
         public Vector3 V1, V2, V3;
-        
-        public ChunkGeometry(Vector3 v1, Vector3 v2, Vector3 v3)
-        {
-            V1 = v1; V2 = v2; V3 = v3;
-        }
+        public ChunkGeometry(Vector3 v1, Vector3 v2, Vector3 v3) { V1 = v1; V2 = v2; V3 = v3; }
     }
-    
+
     public struct MeshSettings
     {
         public int Resolution;
         public ShapeGenerator ShapeGenerator;
-
-        public MeshSettings(int res, ShapeGenerator generator)
-        {
-            Resolution = res;
-            ShapeGenerator = generator;
-        }
+        public MeshSettings(int res, ShapeGenerator generator) { Resolution = res; ShapeGenerator = generator; }
     }
 
-    public struct VertexData
-    {
-        public Vector3 Position;
-        public Color BiomeColor; // Pushed to shader to blend textures/colors
-        // You can add uv, normals, etc., here later
-    }
-
-    public struct BiomePoint
-    {
-        public Vector3 Position; // Normalized direction on the sphere
-        public int BiomeIndex;   // Which biome this specific cell belongs to
-    }
-
-    [System.Serializable]
-    public struct NoiseLayer
-    {
-        public bool enabled;
-        public float frequency;
-        public float strength;
-        public float baseRoughness; // Optional: offset multiplier inside the noise space
-    }
-
-    /// <summary>
-    /// Flattens complex Biome data into primitive types for GPU memory transfer.
-    /// Memory alignment must exactly match the HLSL struct.
-    /// </summary>
+    // STRICT 112-BYTE EXPLICIT LAYOUT
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct GPUBiome
     {
+        // Block 1 (Terrain Compute) - 16 Bytes
         public readonly float startThreshold;
         public readonly float baseHeightOffset;
         public readonly float amplitude;
         public readonly float frequency;
+
+        // Block 2 (Terrain Compute) - 16 Bytes
         public readonly int fractalType;
         public readonly int octaves;
         public readonly float lacunarity;
         public readonly float gain;
-        public readonly Color biomeColor;
 
-        public static int Stride => 48;
+        // Block 3, 4, 5 (Colors) - 48 Bytes
+        public readonly Color groundColor;
+        public readonly Color cliffColor;
+        public readonly Color noiseColor;
 
-        public GPUBiome(BiomeData data)
+        // Block 6 (Visual Noise Settings) - 16 Bytes
+        public readonly int visualNoiseType;
+        public readonly float visualFrequency;
+        public readonly float noiseThreshold;
+        public readonly float stretchX;
+
+        // Block 7 (PBR Data) - 16 Bytes
+        public readonly float stretchY;
+        public readonly float stretchZ;
+        public readonly float metallic;
+        public readonly float smoothness;
+
+        // Block 8 (Bump Map & Padding) - 16 Bytes
+        public readonly float bumpStrength;
+        public readonly float pad1;
+        public readonly float pad2;
+        public readonly float pad3;
+
+        public static int Size => 128; // Increased from 112
+
+        public GPUBiome(
+            float startThreshold, float baseHeightOffset, float amplitude, float frequency,
+            int fractalType, int octaves, float lacunarity, float gain,
+            Color groundColor, Color cliffColor, Color noiseColor,
+            int visualNoiseType, float visualFrequency, float noiseThreshold, float stretchX,
+            float stretchY, float stretchZ, float metallic, float smoothness,
+            float bumpStrength)
         {
-            startThreshold = data.startThreshold;
-            baseHeightOffset = data.baseHeightOffset;
-            amplitude = data.amplitude;
-            frequency = data.frequency;
-            fractalType = (int)data.fractalType;
-            octaves = data.octaves;
-            lacunarity = data.lacunarity;
-            gain = data.gain;
-            biomeColor = data.biomeColor;
+            this.startThreshold = startThreshold;
+            this.baseHeightOffset = baseHeightOffset;
+            this.amplitude = amplitude;
+            this.frequency = frequency;
+            this.fractalType = fractalType;
+            this.octaves = octaves;
+            this.lacunarity = lacunarity;
+            this.gain = gain;
+            this.groundColor = groundColor;
+            this.cliffColor = cliffColor;
+            this.noiseColor = noiseColor;
+            this.visualNoiseType = visualNoiseType;
+            this.visualFrequency = visualFrequency;
+            this.noiseThreshold = noiseThreshold;
+            this.stretchX = stretchX;
+            this.stretchY = stretchY;
+            this.stretchZ = stretchZ;
+            this.metallic = metallic;
+            this.smoothness = smoothness;
+            this.bumpStrength = bumpStrength;
+            this.pad1 = 0f;
+            this.pad2 = 0f;
+            this.pad3 = 0f;
         }
     }
 
-    /// <summary>
-    /// Represents a spherical Voronoi center point on the GPU.
-    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct GPUBiomePoint
     {
         public readonly Vector3 position;
         public readonly int biomeIndex;
-
-        // 3 floats (Vector3) + 1 int = 16 bytes
         public static int Stride => 16;
-
-        public GPUBiomePoint(Vector3 pos, int index)
-        {
-            position = pos;
-            biomeIndex = index;
-        }
+        public GPUBiomePoint(Vector3 pos, int index) { position = pos; biomeIndex = index; }
     }
 
-    /// <summary>
-    /// The final payload returned from the GPU for each vertex.
-    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct GPUVertexData
     {
         public Vector3 position;
-        public float padding;
-        public Color color;
-
-        // 3 floats (Vector3) + 5 floats (Color) = 32 bytes
-        public static int Stride => 32;
+        public float positionPadding;
+        public Vector3 biomeIndices;
+        public float indicesPadding;
+        public Vector3 biomeWeights;
+        public float weightsPadding;
+        public static int Stride => 48;
     }
 }

@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b76d35f48eed854cbecd96e0f34f79c, type: 3}
+  m_Name: HighMountains
+  m_EditorClassIdentifier: Assembly-CSharp::PlanetGeneration.BiomeData
+  baseHeightOffset: 7
+  amplitude: 10
+  frequency: 0.0087
+  fractalType: 2
+  octaves: 4
+  lacunarity: 2
+  gain: 1
+  groundColor: {r: 0.88679236, g: 0.7802918, b: 0.21392965, a: 1}
+  cliffColor: {r: 0.88679236, g: 0.75615454, b: 0.6441793, a: 1}
+  noiseColor: {r: 0.46091634, g: 0.36915228, b: 0.2453665, a: 1}
+  visualNoiseType: 0
+  visualFrequency: 0.04
+  noiseThreshold: 0.012
+  visualStretch: {x: 1, y: 10}
