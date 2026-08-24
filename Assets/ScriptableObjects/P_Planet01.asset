@@ -25,22 +25,35 @@ MonoBehaviour:
   - 400
   - 500
   planetSeed: 1332
-  disableLOD: 0
+  disableLOD: 1
   fixedLODLevel: 2
   collisionDistance: 100
   biomeNoiseFrequency: 0.002
-  biomeBlendDistance: 0.032
+  biomeBlendDistance: 0.031
   biomeNoisePoints: 512
   biomePointJitter: 0.269
   enableWarp: 1
   warpAmplitude: 3
   warpFrequency: 0.04
-  colorBlendSharpness: 11.35
+  colorBlendSharpness: 5.98
   globalSteepnessThreshold: 0.079
   biomePlacements:
+  - biome: {fileID: 11400000, guid: 5ef9bba7ac88d0b469866cd1d8fb40eb, type: 2}
+    startThreshold: -1
   - biome: {fileID: 11400000, guid: 1984f1aa2bb68af4bbf34004cd48be7f, type: 2}
-    startThreshold: -0.124
+    startThreshold: -0.45
   - biome: {fileID: 11400000, guid: d0103a31c38bfe24fb381b24fbbe5ae6, type: 2}
-    startThreshold: -0.438
+    startThreshold: 0
   - biome: {fileID: 11400000, guid: c2587e47cec3ba941b854299730350d0, type: 2}
     startThreshold: 0.5
+  oceanMaterial: {fileID: 2100000, guid: 9b876dd158877b24398b8733fcda3542, type: 2}
+  oceanColorShallow: {r: 0.2982504, g: 0.70265704, b: 0.8544474, a: 0.8}
+  oceanColorDeep: {r: 0.06781767, g: 0.21281555, b: 0.342318, a: 0.95}
+  oceanDepthMultiplier: 0.000002
+  oceanAlphaMultiplier: 1
+  waveNormalA: {fileID: 2800000, guid: b37ca2e021b125347bb1147a1dc850dd, type: 3}
+  waveNormalB: {fileID: 2800000, guid: c297ca42654d63946afd4a9f2c24f7ea, type: 3}
+  waveStrength: 0.221
+  waveScale: 0.05
+  waveSpeed: 0.06
+  oceanSmoothness: 0.95

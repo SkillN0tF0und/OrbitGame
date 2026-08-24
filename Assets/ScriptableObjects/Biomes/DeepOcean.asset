@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b76d35f48eed854cbecd96e0f34f79c, type: 3}
-  m_Name: Mountains
+  m_Name: DeepOcean
   m_EditorClassIdentifier: Assembly-CSharp::PlanetGeneration.BiomeData
-  baseHeightOffset: 7
-  amplitude: 10
-  frequency: 0.0087
-  fractalType: 2
-  octaves: 4
-  lacunarity: 2
+  baseHeightOffset: -12
+  amplitude: 1
+  frequency: 0.09
+  fractalType: 0
+  octaves: 3
+  lacunarity: 1.3
   gain: 1
-  groundColor: {r: 0.2830187, g: 0.2563389, b: 0.1140466, a: 1}
-  cliffColor: {r: 0.9946091, g: 0.29073092, b: 0.11125672, a: 1}
-  noiseColor: {r: 0.12668449, g: 0.11811675, b: 0.1070501, a: 1}
+  groundColor: {r: 0.17520213, g: 0.15780145, b: 0.12254703, a: 1}
+  cliffColor: {r: 1, g: 1, b: 1, a: 1}
+  noiseColor: {r: 0.06838435, g: 0.20215619, b: 0.0738167, a: 1}
   visualNoiseType: 0
-  visualFrequency: 0.04
-  noiseThreshold: 0.215
+  visualFrequency: 0.09
+  noiseThreshold: -0.133
   metallic: 0
-  smoothness: 0.5
-  bumpStrength: 1
+  smoothness: 0.318
+  bumpStrength: 1.37
   stretchDirection: {x: 0, y: 0, z: 0}

@@ -16,6 +16,9 @@ namespace PlanetGeneration
         private ShapeGenerator _shapeGenerator;
         private List<PlanetFace> _rootFaces = new List<PlanetFace>();
 
+        private GameObject _oceanObject;
+        private Material _oceanMaterialInstance;
+
         // Public Accessors
         public PlanetSettings Settings => settings;
         public ShapeGenerator ShapeGenerator => _shapeGenerator;
@@ -45,6 +48,8 @@ namespace PlanetGeneration
 
         private void Update()
         {
+            UpdateOceanMaterial();
+
             if (playerTransform == null || _rootFaces.Count == 0) return;
 
             // Calculate local player position once per frame to pass down the LOD tree
@@ -63,6 +68,7 @@ namespace PlanetGeneration
             InitializeLogic();
             InitializeBuffers();
             GenerateRoots();
+            InitializeOcean();
         }
 
         private void InitializeLogic()
@@ -83,7 +89,6 @@ namespace PlanetGeneration
                 var placement = settings.biomePlacements[i];
                 if (placement.biome != null)
                 {
-                    // Pass the threshold from the tuple into the builder
                     gpuBiomes[i] = placement.biome.ToGPUBiome(placement.startThreshold);
                 }
             }
@@ -122,10 +127,54 @@ namespace PlanetGeneration
             return pf;
         }
 
+        private void InitializeOcean()
+        {
+            if (settings.oceanMaterial == null) return;
+
+            if (_oceanObject == null)
+            {
+                _oceanObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                _oceanObject.name = "Ocean";
+                _oceanObject.transform.SetParent(transform, false);
+                _oceanObject.transform.localPosition = Vector3.zero;
+
+                DestroyImmediate(_oceanObject.GetComponent<Collider>());
+            }
+
+            _oceanObject.transform.localScale = Vector3.one * (settings.radius * 2f);
+
+            if (_oceanMaterialInstance == null)
+            {
+                _oceanMaterialInstance = new Material(settings.oceanMaterial);
+            }
+
+            _oceanObject.GetComponent<MeshRenderer>().sharedMaterial = _oceanMaterialInstance;
+            UpdateOceanMaterial();
+        }
+
+        private void UpdateOceanMaterial()
+        {
+            if (_oceanMaterialInstance == null || settings == null) return;
+
+            _oceanMaterialInstance.SetColor("_ShallowColor", settings.oceanColorShallow);
+            _oceanMaterialInstance.SetColor("_DeepColor", settings.oceanColorDeep);
+            _oceanMaterialInstance.SetFloat("_DepthMultiplier", settings.oceanDepthMultiplier);
+            _oceanMaterialInstance.SetFloat("_AlphaMultiplier", settings.oceanAlphaMultiplier);
+
+            if (settings.waveNormalA != null) _oceanMaterialInstance.SetTexture("_WaveNormalA", settings.waveNormalA);
+            if (settings.waveNormalB != null) _oceanMaterialInstance.SetTexture("_WaveNormalB", settings.waveNormalB);
+
+            _oceanMaterialInstance.SetFloat("_WaveStrength", settings.waveStrength);
+            _oceanMaterialInstance.SetFloat("_WaveScale", settings.waveScale);
+            _oceanMaterialInstance.SetFloat("_WaveSpeed", settings.waveSpeed);
+            _oceanMaterialInstance.SetFloat("_Smoothness", settings.oceanSmoothness);
+        }
+
         private void ClearRoots()
         {
             while (transform.childCount > 0) DestroyImmediate(transform.GetChild(0).gameObject);
             _rootFaces.Clear();
+            _oceanObject = null;
         }
 
         private void ReleaseBuffers()
@@ -149,7 +198,6 @@ namespace PlanetGeneration
                 {
                     if (placement.biome != null)
                     {
-                        // Safely prevent double-subscriptions
                         placement.biome.OnBiomeUpdated -= HandleSettingsUpdated;
                         placement.biome.OnBiomeUpdated += HandleSettingsUpdated;
                     }
@@ -177,21 +225,20 @@ namespace PlanetGeneration
 
         private void HandleSettingsUpdated()
         {
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             UnityEditor.EditorApplication.delayCall += () => {
                 if (this != null && gameObject != null)
                 {
-                    // Refresh subscriptions in case the array of biomes was modified
                     UnsubscribeFromEvents();
                     SubscribeToEvents();
                     Startup();
                 }
             };
-        #else
+#else
             UnsubscribeFromEvents();
             SubscribeToEvents();
             Startup();
-        #endif
+#endif
         }
     }
 }

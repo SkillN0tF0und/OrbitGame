@@ -10,6 +10,7 @@ namespace PlanetGeneration
         [Range(-1f, 1f)] public float startThreshold;
     }
 
+
     [CreateAssetMenu(menuName = "Planet/Settings")]
     public class PlanetSettings : ScriptableObject
     {
@@ -59,6 +60,21 @@ namespace PlanetGeneration
 
         [Header("Biomes (Sort Ascending by Threshold)")]
         public BiomePlacement[] biomePlacements;
+
+        [Header("Ocean Configuration")]
+        public Material oceanMaterial;
+        public Color oceanColorShallow = new Color(0.1f, 0.6f, 0.8f, 0.8f);
+        public Color oceanColorDeep = new Color(0.01f, 0.1f, 0.4f, 0.95f);
+        public float oceanDepthMultiplier = 0.5f;
+        public float oceanAlphaMultiplier = 1.0f;
+
+        [Header("Ocean Waves")]
+        public Texture2D waveNormalA;
+        public Texture2D waveNormalB;
+        [Range(0f, 1f)] public float waveStrength = 0.15f;
+        public float waveScale = 0.05f;
+        public float waveSpeed = 0.5f;
+        [Range(0f, 1f)] public float oceanSmoothness = 0.95f;
 
         private void OnValidate()
         {
