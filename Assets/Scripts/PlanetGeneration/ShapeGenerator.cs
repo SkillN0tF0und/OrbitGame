@@ -14,7 +14,7 @@ namespace PlanetGeneration
             _settings = settings;
             _biomeMapNoise = InitializeMacroNoise();
 
-            // Generate points once during initialization to avoid redundant calculations
+            // Generate points on surface to use voronoi cells for biomes
             _gpuBiomePoints = GenerateBiomePoints();
         }
 
@@ -37,16 +37,15 @@ namespace PlanetGeneration
 
             int numPoints = _settings.biomeNoisePoints;
             GPUBiomePoint[] points = new GPUBiomePoint[numPoints];
-            float phi = Mathf.PI * (3f - Mathf.Sqrt(5f)); // Golden angle for even sphere distribution
-
-            // Deterministic generation prevents biomes shifting randomly on re-compile
+            float phi = Mathf.PI * (3f - Mathf.Sqrt(5f));
+            
             UnityEngine.Random.InitState(_settings.planetSeed);
 
             for (int i = 0; i < numPoints; i++)
             {
                 Vector3 fibPos = CalculateFibonacciSpherePoint(i, numPoints, phi);
 
-                // Jitter destroys the artificial perfect grid look
+                //slight offset to imitate noise
                 Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * _settings.biomePointJitter;
                 Vector3 finalPos = (fibPos + randomOffset).normalized;
 

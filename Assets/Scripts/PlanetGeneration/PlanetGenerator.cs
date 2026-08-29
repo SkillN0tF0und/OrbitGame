@@ -19,12 +19,10 @@ namespace PlanetGeneration
         private GameObject _oceanObject;
         private Material _oceanMaterialInstance;
 
-        // Public Accessors
         public PlanetSettings Settings => settings;
         public ShapeGenerator ShapeGenerator => _shapeGenerator;
-        public Transform PlayerTransform => playerTransform;
 
-        // GPU Buffers
+        // GPU Buffers to transfer data to the gpu
         public ComputeBuffer BiomeBuffer { get; private set; }
         public ComputeBuffer BiomePointBuffer { get; private set; }
         public GPUBiomePoint[] GPUBiomePoints { get; private set; }
@@ -51,8 +49,7 @@ namespace PlanetGeneration
             UpdateOceanMaterial();
 
             if (playerTransform == null || _rootFaces.Count == 0) return;
-
-            // Calculate local player position once per frame to pass down the LOD tree
+            
             Vector3 localPlayerPos = transform.InverseTransformPoint(playerTransform.position);
 
             foreach (var face in _rootFaces)
@@ -77,13 +74,16 @@ namespace PlanetGeneration
             GPUBiomePoints = _shapeGenerator.GetBiomePoints();
         }
 
+        
+        // convert data from scriptable Objects to ComputeBuffers
         private void InitializeBuffers()
         {
             ReleaseBuffers();
-
+            
+            //skip if there are no assigned biomes in PlanetSO
             if (settings.biomePlacements == null || settings.biomePlacements.Length == 0) return;
 
-            GPUBiome[] gpuBiomes = new GPUBiome[settings.biomePlacements.Length];
+            PlanetBiome[] gpuBiomes = new PlanetBiome[settings.biomePlacements.Length];
             for (int i = 0; i < settings.biomePlacements.Length; i++)
             {
                 var placement = settings.biomePlacements[i];
@@ -92,14 +92,17 @@ namespace PlanetGeneration
                     gpuBiomes[i] = placement.biome.ToGPUBiome(placement.startThreshold);
                 }
             }
-
-            BiomeBuffer = new ComputeBuffer(gpuBiomes.Length, GPUBiome.Size);
+            
+            
+            //allocate VRAM
+            BiomeBuffer = new ComputeBuffer(gpuBiomes.Length, PlanetBiome.Size);
             BiomeBuffer.SetData(gpuBiomes);
 
             BiomePointBuffer = new ComputeBuffer(GPUBiomePoints.Length, GPUBiomePoint.Stride);
             BiomePointBuffer.SetData(GPUBiomePoints);
         }
-
+        
+        //create the root faces of the icosahedron
         private void GenerateRoots()
         {
             ClearRoots();
@@ -151,7 +154,9 @@ namespace PlanetGeneration
             _oceanObject.GetComponent<MeshRenderer>().sharedMaterial = _oceanMaterialInstance;
             UpdateOceanMaterial();
         }
-
+        
+        
+        //push variables to material
         private void UpdateOceanMaterial()
         {
             if (_oceanMaterialInstance == null || settings == null) return;
@@ -176,7 +181,7 @@ namespace PlanetGeneration
             _rootFaces.Clear();
             _oceanObject = null;
         }
-
+        
         private void ReleaseBuffers()
         {
             BiomeBuffer?.Release();

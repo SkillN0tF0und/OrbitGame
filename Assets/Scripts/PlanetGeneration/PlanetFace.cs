@@ -20,6 +20,8 @@ namespace PlanetGeneration
 
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
+        
+        // MaterialPropertyBlock allows to override shader variables on a single renderer without instantiating new copy of Material
         private MaterialPropertyBlock _propBlock;
 
         public FaceState State { get; private set; }
@@ -47,7 +49,9 @@ namespace PlanetGeneration
             if (_propBlock == null) _propBlock = new MaterialPropertyBlock();
 
             _meshRenderer.GetPropertyBlock(_propBlock);
-
+            
+            
+            // push buffers to meshrenderers material for use  in shader
             _propBlock.SetBuffer("_BiomeSurfaceBuffer", _manager.BiomeBuffer);
             _propBlock.SetFloat("_ColorBlendSharpness", _manager.Settings.colorBlendSharpness);
             _propBlock.SetFloat("_GlobalSteepnessThreshold", _manager.Settings.globalSteepnessThreshold);
@@ -59,9 +63,8 @@ namespace PlanetGeneration
         {
             if (State == FaceState.Generating) return;
 
-            BindShaderVariables();
-
-            // Restored original working LOD logic
+            BindShaderVariables(); // for editor use
+            
             int targetDepth = _manager.Settings.maxRecursionDepth;
 
             if (_manager.Settings.disableLOD)
@@ -103,7 +106,8 @@ namespace PlanetGeneration
         {
             _isSplit = true;
             _activeChildrenCount = 0;
-
+            
+            //Slerp so it works for the sphere
             Vector3 a = Vector3.Slerp(_geometry.V1, _geometry.V2, 0.5f).normalized * _manager.Settings.radius;
             Vector3 b = Vector3.Slerp(_geometry.V2, _geometry.V3, 0.5f).normalized * _manager.Settings.radius;
             Vector3 c = Vector3.Slerp(_geometry.V3, _geometry.V1, 0.5f).normalized * _manager.Settings.radius;
@@ -142,13 +146,14 @@ namespace PlanetGeneration
                 _children = null;
             }
             ToggleMesh(true);
-            UpdateCollision(true);
         }
 
         private void GenerateMesh()
         {
             MeshSettings meshSettings = new MeshSettings(_manager.Settings.chunkResolution, _manager.ShapeGenerator);
-
+            
+            
+            //start mesh generation
             MeshGenerator.CreateChunkMeshAsync(
                 _geometry,
                 meshSettings,
@@ -173,7 +178,6 @@ namespace PlanetGeneration
             State = FaceState.Completed;
 
             BindShaderVariables();
-            UpdateCollision(!_isSplit);
 
             if (_parentFace != null)
             {
@@ -188,7 +192,6 @@ namespace PlanetGeneration
             if (_activeChildrenCount == 4)
             {
                 ToggleMesh(false);
-                UpdateCollision(false);
             }
         }
 
@@ -220,29 +223,7 @@ namespace PlanetGeneration
             }
         }
 
-        private void UpdateCollision(bool isLeaf)
-        {
-            if (!isLeaf)
-            {
-                if (TryGetComponent<MeshCollider>(out var oldCollider)) DestroyImmediate(oldCollider);
-                return;
-            }
-
-            if (_meshFilter.sharedMesh == null) return;
-
-            Vector3 localPlayerPos = _manager.transform.InverseTransformPoint(_manager.PlayerTransform.position);
-            float distToPlayer = GetDistanceToFace(localPlayerPos);
-
-            if (distToPlayer < _manager.Settings.collisionDistance)
-            {
-                MeshCollider collider = GetComponent<MeshCollider>();
-                if (collider == null) collider = gameObject.AddComponent<MeshCollider>();
-                collider.sharedMesh = _meshFilter.sharedMesh;
-            }
-            else
-            {
-                if (TryGetComponent<MeshCollider>(out var oldCollider)) DestroyImmediate(oldCollider);
-            }
-        }
+       
+        
     }
 }
