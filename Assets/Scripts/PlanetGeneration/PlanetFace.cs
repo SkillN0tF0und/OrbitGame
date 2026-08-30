@@ -37,7 +37,10 @@ namespace PlanetGeneration
 
             _meshFilter = GetComponent<MeshFilter>();
             _meshRenderer = GetComponent<MeshRenderer>();
-            _meshRenderer.sharedMaterial = _manager.Settings.material;
+    
+            // Evaluate which material to apply
+            _meshRenderer.sharedMaterial = _manager.Settings.showWireframe ? 
+                _manager.Settings.wireframeMaterial : _manager.Settings.material;
 
             BindShaderVariables();
             GenerateMesh();
@@ -55,6 +58,14 @@ namespace PlanetGeneration
             _propBlock.SetBuffer("_BiomeSurfaceBuffer", _manager.BiomeBuffer);
             _propBlock.SetFloat("_ColorBlendSharpness", _manager.Settings.colorBlendSharpness);
             _propBlock.SetFloat("_GlobalSteepnessThreshold", _manager.Settings.globalSteepnessThreshold);
+            _propBlock.SetBuffer("_BiomePoints", _manager.BiomePointBuffer);
+            _propBlock.SetInt("_BiomePointCount", _manager.GPUBiomePoints.Length);
+            _propBlock.SetFloat("_Radius", _manager.Settings.radius);
+            _propBlock.SetFloat("_BiomeBlendDistance", _manager.Settings.biomeBlendDistance);
+            _propBlock.SetInt("_EnableWarp", _manager.Settings.enableWarp ? 1 : 0);
+            _propBlock.SetFloat("_WarpAmplitude", _manager.Settings.warpAmplitude);
+            _propBlock.SetFloat("_WarpFrequency", _manager.Settings.warpFrequency);
+            _propBlock.SetInt("_MacroSeed", _manager.Settings.planetSeed);
 
             _meshRenderer.SetPropertyBlock(_propBlock);
         }

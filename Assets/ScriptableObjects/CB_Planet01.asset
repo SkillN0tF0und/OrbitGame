@@ -15,12 +15,12 @@ MonoBehaviour:
   mass: 1000
   radius: 100
   orbit:
-    orbitDistance: 2474
-    orbitStretch: 0.4650000035762787
+    orbitDistance: 3511
+    orbitStretch: 0.027000000700354576
     orbitTilt: 0
     ellipseRotation: 0.5199999809265137
     planeRotation: 0.6499999761581421
-    startOffset: 4.75
+    startOffset: 4.039999961853027
   alignment: 0
-  rotationPeriod: 100
+  rotationPeriod: 1000
   axialTilt: {x: 10, y: 90, z: 0}

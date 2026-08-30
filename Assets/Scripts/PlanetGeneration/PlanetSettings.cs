@@ -21,7 +21,9 @@ namespace PlanetGeneration
         [Header("Global Settings")]
         public float radius = 100f;
         public Material material;
-
+        public Material wireframeMaterial;
+        public bool showWireframe = false;  
+        
         [Header("LOD Settings")]
         public int chunkResolution = 16;
         [Range(0f, 1f)]
@@ -65,6 +67,7 @@ namespace PlanetGeneration
         public float oceanAlphaMultiplier = 1.0f;
 
         [Header("Ocean Waves")]
+        public bool oceanEnabled = true;
         public Texture2D waveNormalA;
         public Texture2D waveNormalB;
         [Range(0f, 1f)] public float waveStrength = 0.15f;
@@ -73,6 +76,11 @@ namespace PlanetGeneration
         [Range(0f, 1f)] public float oceanSmoothness = 0.95f;
 
         private void OnValidate()
+        {
+            OnSettingsUpdated?.Invoke();
+        }
+        
+        public void ApplyRuntimeChanges()
         {
             OnSettingsUpdated?.Invoke();
         }

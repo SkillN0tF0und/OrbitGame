@@ -21,16 +21,15 @@ namespace PlanetGeneration
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct PlanetBiome
     {
-        // terrain variables, used in shapeGenerator ComputeSahder - 32 Bytes
-        public readonly float startThreshold; // not used in shader currently
+        // terrain variables, used in shapeGenerator ComputeSahder - 28 Bytes
         public readonly float baseHeightOffset;
         public readonly float amplitude;
         public readonly float frequency;
-        
         public readonly int fractalType;
         public readonly int octaves;
         public readonly float lacunarity;
         public readonly float gain;
+        public readonly float pad0;
 
         // Colors - 48 Bytes
         public readonly Color groundColor;
@@ -49,23 +48,25 @@ namespace PlanetGeneration
         public readonly float metallic;
         public readonly float smoothness;
 
-        // Bump Map - 4 Bytes + 12 bytes padding to get to 128 bytes and prevent "GPU stride misalignment"
+        // Bump Map - 4 Bytes 12 bytes padding to get to 128 bytes and prevent "GPU stride misalignment"
         public readonly float bumpStrength;
+        
+        // 16 bytes padding to get to 128 bytes and prevent "GPU stride misalignment"
         public readonly float pad1;
         public readonly float pad2;
         public readonly float pad3;
+        
 
         public static int Size => 128;
 
         public PlanetBiome(
-            float startThreshold, float baseHeightOffset, float amplitude, float frequency,
+            float baseHeightOffset, float amplitude, float frequency,
             int fractalType, int octaves, float lacunarity, float gain,
             Color groundColor, Color cliffColor, Color noiseColor,
             int visualNoiseType, float visualFrequency, float noiseThreshold, float stretchX,
             float stretchY, float stretchZ, float metallic, float smoothness,
             float bumpStrength)
         {
-            this.startThreshold = startThreshold;
             this.baseHeightOffset = baseHeightOffset;
             this.amplitude = amplitude;
             this.frequency = frequency;
@@ -73,6 +74,7 @@ namespace PlanetGeneration
             this.octaves = octaves;
             this.lacunarity = lacunarity;
             this.gain = gain;
+            this.pad0 = 0f;
             this.groundColor = groundColor;
             this.cliffColor = cliffColor;
             this.noiseColor = noiseColor;
@@ -109,9 +111,9 @@ namespace PlanetGeneration
     {
         public Vector3 position;
         public float positionPadding;
-        public Vector3 biomeIndices;
-        public float indicesPadding;
-        public Vector3 biomeWeights;
+        public Vector3 normal; 
+        public float normalPadding;
+        public Vector3 biomeWeights; // not used anymore
         public float weightsPadding;
         public static int Stride => 48;
     }

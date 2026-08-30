@@ -9,6 +9,23 @@ namespace PlanetGeneration
     {
         private const int ThreadGroupSize = 64;
 
+        // Cache shader property IDs to eliminate string-hashing overhead
+        private static readonly int InputDirectionsId = Shader.PropertyToID("_InputDirections");
+        private static readonly int OutputVerticesId = Shader.PropertyToID("_OutputVertices");
+        private static readonly int BiomesId = Shader.PropertyToID("_Biomes");
+        private static readonly int BiomePointsId = Shader.PropertyToID("_BiomePoints");
+        
+        private static readonly int VertexCountId = Shader.PropertyToID("_VertexCount");
+        private static readonly int BiomeCountId = Shader.PropertyToID("_BiomeCount");
+        private static readonly int BiomePointCountId = Shader.PropertyToID("_BiomePointCount");
+        private static readonly int RadiusId = Shader.PropertyToID("_Radius");
+        private static readonly int BiomeBlendDistanceId = Shader.PropertyToID("_BiomeBlendDistance");
+        
+        private static readonly int EnableWarpId = Shader.PropertyToID("_EnableWarp");
+        private static readonly int WarpAmplitudeId = Shader.PropertyToID("_WarpAmplitude");
+        private static readonly int WarpFrequencyId = Shader.PropertyToID("_WarpFrequency");
+        private static readonly int MacroSeedId = Shader.PropertyToID("_MacroSeed");
+
         public static void CreateChunkMeshAsync(
             ChunkGeometry geo,
             MeshSettings settings,
@@ -83,22 +100,25 @@ namespace PlanetGeneration
             inputDirBuffer.SetData(inputDirections);
             biomePointBuffer.SetData(gpuBiomePoints);
 
+            // ComputeShader kernels must still be fetched by string unless you hardcode the index (usually 0).
             int kernel = computeShader.FindKernel("GenerateVertices");
 
-            computeShader.SetBuffer(kernel, "_InputDirections", inputDirBuffer);
-            computeShader.SetBuffer(kernel, "_OutputVertices", outputVertBuffer);
-            computeShader.SetBuffer(kernel, "_Biomes", biomeBuffer);
-            computeShader.SetBuffer(kernel, "_BiomePoints", biomePointBuffer);
+            // Use the cached integer IDs
+            computeShader.SetBuffer(kernel, InputDirectionsId, inputDirBuffer);
+            computeShader.SetBuffer(kernel, OutputVerticesId, outputVertBuffer);
+            computeShader.SetBuffer(kernel, BiomesId, biomeBuffer);
+            computeShader.SetBuffer(kernel, BiomePointsId, biomePointBuffer);
 
-            computeShader.SetInt("_VertexCount", vertexCount);
-            computeShader.SetInt("_BiomeCount", biomeBuffer.count);
-            computeShader.SetInt("_BiomePointCount", gpuBiomePoints.Length);
-            computeShader.SetFloat("_Radius", settings.radius);
-            computeShader.SetFloat("_BiomeBlendDistance", settings.biomeBlendDistance);
-            computeShader.SetInt("_EnableWarp", settings.enableWarp ? 1 : 0);
-            computeShader.SetFloat("_WarpAmplitude", settings.warpAmplitude);
-            computeShader.SetFloat("_WarpFrequency", settings.warpFrequency);
-            computeShader.SetInt("_MacroSeed", settings.planetSeed);
+            computeShader.SetInt(VertexCountId, vertexCount);
+            computeShader.SetInt(BiomeCountId, biomeBuffer.count);
+            computeShader.SetInt(BiomePointCountId, gpuBiomePoints.Length);
+            computeShader.SetFloat(RadiusId, settings.radius);
+            computeShader.SetFloat(BiomeBlendDistanceId, settings.biomeBlendDistance);
+            
+            computeShader.SetInt(EnableWarpId, settings.enableWarp ? 1 : 0);
+            computeShader.SetFloat(WarpAmplitudeId, settings.warpAmplitude);
+            computeShader.SetFloat(WarpFrequencyId, settings.warpFrequency);
+            computeShader.SetInt(MacroSeedId, settings.planetSeed);
 
             int threadGroups = Mathf.CeilToInt(vertexCount / (float)ThreadGroupSize);
             computeShader.Dispatch(kernel, threadGroups, 1, 1);
@@ -132,27 +152,20 @@ namespace PlanetGeneration
         private static Mesh AssembleMesh(int vertexCount, int[] triangles, NativeArray<GPUVertexData> outputData)
         {
             Vector3[] finalVertices = new Vector3[vertexCount];
-            Vector3[] finalUV0 = new Vector3[vertexCount];
-            Vector3[] finalUV1 = new Vector3[vertexCount];
+            Vector3[] finalNormals = new Vector3[vertexCount];
 
             for (int i = 0; i < vertexCount; i++)
             {
                 var data = outputData[i];
                 finalVertices[i] = data.position;
-
-                finalUV0[i] = data.biomeIndices;
-                finalUV1[i] = data.biomeWeights;
+                finalNormals[i] = data.normal;
             }
 
             Mesh mesh = new Mesh { name = "ChunkMesh" };
             mesh.vertices = finalVertices;
+            mesh.normals = finalNormals;
             mesh.triangles = triangles;
 
-            mesh.SetUVs(0, finalUV0);
-            mesh.SetUVs(1, finalUV1);
-
-            // Unity calculates the normals using the newly displaced vertices
-            mesh.RecalculateNormals();
             mesh.RecalculateBounds();
 
             return mesh;

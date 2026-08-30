@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b76d35f48eed854cbecd96e0f34f79c, type: 3}
+  m_Name: plains
+  m_EditorClassIdentifier: Assembly-CSharp::PlanetGeneration.BiomeData
+  baseHeightOffset: 4
+  amplitude: 6
+  frequency: 0.004
+  fractalType: 1
+  octaves: 4
+  lacunarity: 2
+  gain: 1
+  groundColor: {r: 0.28265542, g: 0.509434, b: 0.095433004, a: 1}
+  cliffColor: {r: 0.8706199, g: 0.59536403, b: 0.36021596, a: 1}
+  noiseColor: {r: 0.47843137, g: 0.2895811, b: 0.04313726, a: 1}
+  visualNoiseType: 5
+  visualFrequency: 0.2
+  noiseThreshold: 0.14
+  metallic: 0
+  smoothness: 0.195
+  bumpStrength: 5
+  stretchDirection: {x: 3, y: 2, z: 2}

@@ -65,7 +65,10 @@ namespace PlanetGeneration
             InitializeLogic();
             InitializeBuffers();
             GenerateRoots();
-            InitializeOcean();
+            if (settings.oceanEnabled)
+            {
+                InitializeOcean();
+            }
         }
 
         private void InitializeLogic()
@@ -132,6 +135,8 @@ namespace PlanetGeneration
 
         private void InitializeOcean()
         {
+            if (settings.oceanEnabled == false) return;
+            
             if (settings.oceanMaterial == null) return;
 
             if (_oceanObject == null)

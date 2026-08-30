@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c94787f4d71200418db5340f8f370a1, type: 3}
+  m_Name: P_Planet01MeshVisual
+  m_EditorClassIdentifier: Assembly-CSharp::PlanetGeneration.PlanetSettings
+  radius: 250
+  material: {fileID: 2100000, guid: 25eff10e31a797b46a97b981d60371c8, type: 2}
+  chunkResolution: 8
+  backFaceCullThreshold: 0
+  maxRecursionDepth: 5
+  lodDistances:
+  - 50
+  - 150
+  - 200
+  - 300
+  - 400
+  - 500
+  disableLOD: 0
+  fixedLODLevel: 2
+  planetSeed: 1332
+  biomeNoiseFrequency: 0.002
+  biomeBlendDistance: 0.031
+  biomeNoisePoints: 512
+  biomePointJitter: 0.269
+  enableWarp: 1
+  warpAmplitude: 3
+  warpFrequency: 0.04
+  colorBlendSharpness: 11.6
+  globalSteepnessThreshold: 0.156
+  biomePlacements:
+  - biome: {fileID: 11400000, guid: 5ef9bba7ac88d0b469866cd1d8fb40eb, type: 2}
+    startThreshold: -1
+  - biome: {fileID: 11400000, guid: 1984f1aa2bb68af4bbf34004cd48be7f, type: 2}
+    startThreshold: -0.45
+  - biome: {fileID: 11400000, guid: d0103a31c38bfe24fb381b24fbbe5ae6, type: 2}
+    startThreshold: 0
+  - biome: {fileID: 11400000, guid: c2587e47cec3ba941b854299730350d0, type: 2}
+    startThreshold: 0.5
+  oceanMaterial: {fileID: 2100000, guid: 9b876dd158877b24398b8733fcda3542, type: 2}
+  oceanColorShallow: {r: 0.2982504, g: 0.70265704, b: 0.8544474, a: 0.8}
+  oceanColorDeep: {r: 0.06781767, g: 0.21281555, b: 0.342318, a: 0.95}
+  oceanDepthMultiplier: 0.000002
+  oceanAlphaMultiplier: 1
+  oceanEnabled: 0
+  waveNormalA: {fileID: 2800000, guid: b37ca2e021b125347bb1147a1dc850dd, type: 3}
+  waveNormalB: {fileID: 2800000, guid: c297ca42654d63946afd4a9f2c24f7ea, type: 3}
+  waveStrength: 0.221
+  waveScale: 0.05
+  waveSpeed: 0.06
+  oceanSmoothness: 0.95

@@ -1,0 +1,238 @@
+#pragma kernel GenerateVertices
+#include "FastNoiseLite.hlsl"
+
+// 128-BYTE
+// matches the PlanetBiome struct
+struct GPUBiome
+{
+    float baseHeightOffset;
+    float amplitude;
+    float frequency;
+    int fractalType;
+    
+    int octaves;
+    float lacunarity;
+    float gain;
+    float pad0; 
+    
+    float4 groundColor;
+    float4 cliffColor;
+    float4 noiseColor;
+    
+    int visualNoiseType;
+    float visualFrequency;
+    float noiseThreshold;
+    float stretchX;
+    
+    float stretchY;
+    float stretchZ;
+    float metallic;
+    float smoothness;
+
+    float bumpStrength;
+    float pad1;
+    float pad2;
+    float pad3;
+};
+
+// single Voronoi seed on the surface.
+struct GPUBiomePoint
+{
+    float3 position;
+    int biomeIndex;
+};
+
+// 48-BYTE 
+struct GPUVertexData
+{
+    float3 position;
+    float positionPadding;
+    
+    float3 normal;
+    float normalPadding;
+    
+    // no longer needed
+    float3 biomeWeights; 
+    float weightsPadding;
+};
+
+// Buffers
+// RW Buffer - read/write
+RWStructuredBuffer<GPUVertexData> _OutputVertices;
+StructuredBuffer<float3> _InputDirections; 
+StructuredBuffer<GPUBiome> _Biomes;
+StructuredBuffer<GPUBiomePoint> _BiomePoints;
+
+// Global constants injected by MeshGenerator.cs
+uint _VertexCount; 
+uint _BiomeCount;
+uint _BiomePointCount;
+float _Radius;
+float _BiomeBlendDistance;
+
+int _EnableWarp;
+float _WarpAmplitude;
+float _WarpFrequency;
+int _MacroSeed;
+
+// initialize the FastNoiseLite state
+fnl_state GetBiomeNoiseState(GPUBiome biome, int seed)
+{
+    fnl_state state = fnlCreateState(seed);
+    state.noise_type = FNL_NOISE_OPENSIMPLEX2;
+    state.fractal_type = biome.fractalType;
+    state.frequency = biome.frequency;
+    state.octaves = biome.octaves;
+    state.lacunarity = biome.lacunarity;
+    state.gain = biome.gain;
+    return state;
+}
+
+float GetBiomeHeight(GPUBiome biome, float3 samplePos)
+{
+    fnl_state state = GetBiomeNoiseState(biome, _MacroSeed);
+    float noise = fnlGetNoise3D(state, samplePos.x, samplePos.y, samplePos.z);
+    
+    // Ridge noise requires absolute value to create sharp peaks
+    if (biome.fractalType == FNL_FRACTAL_RIDGED) 
+    {
+        noise = abs(noise);
+    }
+    
+    return biome.baseHeightOffset + (noise * biome.amplitude);
+}
+
+// GET HEIGHT - for each vertex on the sphere to generate terrain
+
+float GetHeight(float3 unitVector)
+{
+    float3 samplePos = unitVector * _Radius;
+    float3 warpedDir = unitVector;
+    
+    // warp distorts the 3D coordinate before evaluating Voronoi distances. for more organic cell borders
+    if (_EnableWarp == 1)
+    {
+        fnl_state warpState = fnlCreateState(_MacroSeed + 1);
+        warpState.domain_warp_type = FNL_DOMAIN_WARP_OPENSIMPLEX2;
+        warpState.domain_warp_amp = _WarpAmplitude;
+        warpState.frequency = _WarpFrequency;
+        
+        float wx = samplePos.x;
+        float wy = samplePos.y;
+        float wz = samplePos.z;
+        fnlDomainWarp3D(warpState, wx, wy, wz);
+        warpedDir = normalize(float3(wx, wy, wz));
+    }
+
+    // find the 3 closest seeds.
+    float d1 = 3.402823466e+38F;
+    float d2 = 3.402823466e+38F;
+    float d3 = 3.402823466e+38F;
+    uint idx1 = 0, idx2 = 0, idx3 = 0;
+
+    for (uint i = 0; i < _BiomePointCount; i++)
+    {
+        float dist = length(warpedDir - _BiomePoints[i].position); 
+
+        if (dist < d1)
+        {
+            d3 = d2; idx3 = idx2;
+            d2 = d1; idx2 = idx1;
+            d1 = dist; idx1 = i;
+        }
+        else if (dist < d2)
+        {
+            d3 = d2; idx3 = idx2;
+            d2 = dist; idx2 = i;
+        }
+        else if (dist < d3)
+        {
+            d3 = dist; idx3 = i;
+        }
+    }
+
+    uint b1 = _BiomePoints[idx1].biomeIndex;
+    uint b2 = _BiomePoints[idx2].biomeIndex;
+    uint b3 = _BiomePoints[idx3].biomeIndex;
+
+    // get percentage weights for each seed.
+    float t2 = clamp((d2 - d1) / _BiomeBlendDistance, 0.0, 1.0);
+    float w2 = smoothstep(1.0, 0.0, t2);
+
+    float t3 = clamp((d3 - d1) / _BiomeBlendDistance, 0.0, 1.0);
+    float w3 = smoothstep(1.0, 0.0, t3);
+
+    float w1 = 1.0;
+    float weightSum = w1 + w2 + w3;
+    w1 /= weightSum;
+    w2 /= weightSum;
+    w3 /= weightSum;
+
+    //If two neighboring cells belong to the exact same biome, combine their weights.
+    if (b2 == b1) { w1 += w2; w2 = 0.0; }
+    if (b3 == b1) { w1 += w3; w3 = 0.0; }
+    else if (b3 == b2) { w2 += w3; w3 = 0.0; }
+    
+
+    // Evaluate final height
+    float heightA = GetBiomeHeight(_Biomes[b1], samplePos);
+
+    float heightB = 0.0;
+    if (w2 > 0.0) 
+    {
+        heightB = GetBiomeHeight(_Biomes[b2], samplePos);
+    }
+
+    float heightC = 0.0;
+    if (w3 > 0.0) 
+    {
+        heightC = GetBiomeHeight(_Biomes[b3], samplePos);
+    }
+
+    return (heightA * w1) + (heightB * w2) + (heightC * w3);
+}
+
+
+[numthreads(64, 1, 1)]
+void GenerateVertices (uint3 id : SV_DispatchThreadID)
+{
+    // Prevent buffer out-of-bounds errors on the final thread group.
+    if (id.x >= _VertexCount) return; 
+
+    // Get base coordinate for this vertex
+    float3 unitVector = _InputDirections[id.x];
+    float centerHeight = GetHeight(unitVector);
+    
+    // calculate the heights directly right and up to get normals independent of other vertices
+
+    float offset = 0.001; 
+    
+    float3 tangent = cross(unitVector, float3(0, 1, 0));
+    if (length(tangent) < 0.001) tangent = cross(unitVector, float3(1, 0, 0)); // Fallback at poles
+    tangent = normalize(tangent);
+    float3 bitangent = normalize(cross(unitVector, tangent));
+    
+    float3 pRight = normalize(unitVector + tangent * offset);
+    float3 pUp = normalize(unitVector + bitangent * offset);
+    
+    float rightHeight = GetHeight(pRight);
+    float upHeight = GetHeight(pUp);
+
+    // final position
+    float3 vCenter = unitVector * (_Radius + centerHeight);
+    float3 vRight = pRight * (_Radius + rightHeight);
+    float3 vUp = pUp * (_Radius + upHeight);
+    
+    // OUTPUT 
+    GPUVertexData output;
+    output.position = vCenter;
+    output.positionPadding = 0.0;
+    
+    output.normal = normalize(cross(vRight - vCenter, vUp - vCenter));
+    output.normalPadding = 0.0;
+    
+    output.biomeWeights = float3(0, 0, 0); 
+    output.weightsPadding = 0.0;
+
+    _OutputVertices[id.x] = output;
+}

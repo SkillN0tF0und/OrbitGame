@@ -46,7 +46,7 @@ namespace PlanetGeneration
         public PlanetBiome ToGPUBiome(float assignedThreshold)
         {
             return new PlanetBiome(
-                assignedThreshold, baseHeightOffset, amplitude, frequency,
+                baseHeightOffset, amplitude, frequency,
                 (int)fractalType, octaves, lacunarity, gain,
                 groundColor, cliffColor, noiseColor,
                 (int)visualNoiseType, visualFrequency, noiseThreshold, stretchDirection.x,

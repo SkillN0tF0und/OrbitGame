@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a1a74b042ab7dd48999e6f637459769, type: 3}
+  m_Name: PlayerDummyOrbit
+  m_EditorClassIdentifier: Assembly-CSharp::OrbitGame.OrbitMechanics.CelestialBodySettings
+  mass: 1000
+  radius: 100
+  orbit:
+    orbitDistance: 684
+    orbitStretch: 0.597000002861023
+    orbitTilt: 0.23000000417232513
+    ellipseRotation: 0.1599999964237213
+    planeRotation: 0.30000001192092896
+    startOffset: 0
+  alignment: 0
+  rotationPeriod: 1
+  axialTilt: {x: 0, y: 23.5, z: 0}
